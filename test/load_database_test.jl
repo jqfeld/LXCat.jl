@@ -1,4 +1,4 @@
-using LXCatHelpers, Interpolations, Dates, Test
+using LXCat, Interpolations, Dates, Test
 
 db = load_database("../data/SigloDataBase-LXCat-04Jun2013.txt")
 

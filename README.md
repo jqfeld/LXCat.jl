@@ -1,4 +1,4 @@
-# LXCatHelpers.jl
+# LXCat.jl
 
 ## Tests
 As I am not sure about the Copyright of the data in the LXCat database 

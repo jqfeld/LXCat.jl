@@ -1,4 +1,4 @@
-using LXCatHelpers, Interpolations, Dates, Test
+using LXCat, Interpolations, Dates, Test
 
 string = """EXCITATION
 Ar -> Ar*(11.5eV)

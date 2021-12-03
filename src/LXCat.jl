@@ -1,4 +1,4 @@
-module LXCatHelpers
+module LXCat
 
 using Dates
 using Interpolations

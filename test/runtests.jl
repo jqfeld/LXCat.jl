@@ -1,4 +1,4 @@
-using LXCatHelpers, Test, SafeTestsets
+using LXCat, Test, SafeTestsets
 
 @safetestset "String Parsing Effective Cross Section" begin include("string_parse_effective_test.jl") end
 @safetestset "String Parsing Elastic Cross Section" begin include("string_parse_elastic_test.jl") end

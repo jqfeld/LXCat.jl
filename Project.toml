@@ -1,4 +1,4 @@
-name = "LXCatHelpers"
+name = "LXCat"
 uuid = "98de444b-ff9e-46e7-a543-7c3041db51ee"
 authors = ["Jan Kuhfeld <jan.kuhfeld@rub.de>"]
 version = "0.1.0"

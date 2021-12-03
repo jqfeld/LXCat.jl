@@ -1,4 +1,4 @@
-using LXCatHelpers, Interpolations, Dates, Test
+using LXCat, Interpolations, Dates, Test
 
 string = """ELASTIC
 CH4

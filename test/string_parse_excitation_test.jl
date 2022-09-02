@@ -18,9 +18,10 @@ UPDATED: 2010-06-23 11:41:34
 
 cs = parse_string(string)
 
-@test cs.ground_state == "Ar" 
-@test cs.excited_state == "Ar*(11.5eV)" 
-@test cs.threshold_energy == 1.15e1 
+@test cs.type.projectile == "e" 
+@test cs.type.target == "Ar" 
+@test cs.type.excited_state == "Ar*(11.5eV)" 
+@test cs.type.threshold_energy == 1.15e1 
 @test cs.comment == "All excitation is grouped into this one level."
 @test cs.updated == DateTime("2010-06-23T11:41:34")
 @test cs.cross_section(1e3) == 1.77e-21

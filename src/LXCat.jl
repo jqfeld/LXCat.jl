@@ -4,8 +4,8 @@ using Dates
 using Interpolations
 
 export load_database, parse_string
-export ElasticCrossSection, EffectiveCrossSection, ExcitationCrossSection,
-       IonizationCrossSection
+export Elastic, Effective, Excitation,
+       Ionization, CrossSection
 
 
 abstract type AbstractCrossSection end;
@@ -14,52 +14,67 @@ function (cs::AbstractCrossSection)(E)
     max(0, cs.cross_section(E))
 end
 
-struct ElasticCrossSection{T} <: AbstractCrossSection 
-    ground_state::String
-    mass_ratio::Float64
+struct CrossSection{T,I} <: AbstractCrossSection
+    type::T
     comment::String
     updated::DateTime
-    cross_section::T
+    cross_section::I
 end
 
-struct EffectiveCrossSection{T} <: AbstractCrossSection 
-    ground_state::String
+abstract type AbstractCollision end;
+
+struct Elastic <: AbstractCollision
+    projectile::String
+    target::String
     mass_ratio::Float64
-    comment::String
-    updated::DateTime
-    cross_section::T
 end
 
-struct ExcitationCrossSection{T} <: AbstractCrossSection 
-    ground_state::String
+struct Effective <: AbstractCollision
+    projectile::String
+    target::String
+    mass_ratio::Float64
+end
+
+struct Excitation <: AbstractCollision
+    projectile::String
+    target::String
     excited_state::String
     threshold_energy::Float64
-    comment::String
-    updated::DateTime
-    cross_section::T
 end
 
-struct IonizationCrossSection{T} <: AbstractCrossSection 
-    ground_state::String
+struct Ionization <: AbstractCollision
+    projectile::String
+    target::String
     excited_state::String
     threshold_energy::Float64
-    comment::String
-    updated::DateTime
-    cross_section::T
 end
+
+struct Isotropic <: AbstractCollision
+    projectile::String
+    target::String
+end
+
+struct BackScatter <: AbstractCollision
+    projectile::String
+    target::String
+end
+
+
+get_collision_args(x, args...) = error("Not implemented for collision type " * string(x))
 
 
 function parse_string(s)
     lines = split(s, '\n')
 
-
     # find start and end lines cross section data
-    cs_start = findfirst(x -> startswith(x, "--"), lines)
-    cs_end = findlast(x -> startswith(x, "--"), lines)
+    # start one line after the first separation line (----...)
+    cs_start = findfirst(x -> startswith(x, "--"), lines) + 1
+    # end one line before the second separation line (----...)
+    cs_end = findlast(x -> startswith(x, "--"), lines) - 1
 
     comment = ""
     updated_str = ""
-    for l in lines[3:cs_start]
+    for l in lines[1:(cs_start-1)]
         if startswith(l, "COMMENT")
             comment *= replace(l, "COMMENT: " => "")
         end
@@ -71,7 +86,7 @@ function parse_string(s)
     
     energy = Float64[]
     cs = Float64[]
-    for l in lines[(cs_start + 1):(cs_end - 1)]
+    for l in lines[cs_start:cs_end]
         (e, c) = split(strip(l), '\t')
         push!(energy, parse(Float64, e))
         push!(cs, parse(Float64, c))
@@ -81,79 +96,47 @@ function parse_string(s)
     energy = Interpolations.deduplicate_knots!(energy[perm])
     cs = cs[perm]
 
-    if lines[1] == "IONIZATION"
-        # ground_state is given by the line after EFFECTIVE
-        (ground_state, excited_state) = split(lines[2], "->")
-        # threshold_energy is given by the next line
-        threshold_energy = parse(Float64, strip(split(lines[3], '/')[1]))
-        IonizationCrossSection(
-            String(strip(ground_state)), 
-            String(strip(excited_state)),
-            threshold_energy, 
-            comment, 
-            DateTime(updated_str), 
-            LinearInterpolation(energy, cs, extrapolation_bc=Line())
-        )
-    elseif lines[1] == "EXCITATION"
-        # ground_state is given by the line after EFFECTIVE
-        (ground_state, excited_state) = split(lines[2], "->")
-        # threshold_energy is given by the next line
-        threshold_energy = parse(Float64, strip(split(lines[3], '/')[1]))
-        ExcitationCrossSection(
-            String(strip(ground_state)), 
-            String(strip(excited_state)),
-            threshold_energy, 
-            comment, 
-            DateTime(updated_str), 
-            LinearInterpolation(energy, cs, extrapolation_bc=Line())
-        )
-    elseif lines[1] == "ELASTIC"
-        # ground_state is given by the line after EFFECTIVE
-        ground_state = String(lines[2])
+    type = parse_coll_type(lines[1:cs_start])
+    return CrossSection(type, comment, DateTime(updated_str), linear_interpolation(energy, cs, extrapolation_bc=Line()))
 
-        # mass_ratio is given by the next line
-        mass_ratio = parse(Float64, strip(split(lines[3], '/')[1]))
+end
 
-        ElasticCrossSection(
-            ground_state, 
-            mass_ratio, 
-            comment, 
-            DateTime(updated_str), 
-            LinearInterpolation(energy, cs, extrapolation_bc=Line())
-        )
-    elseif lines[1] == "EFFECTIVE"
-        # ground_state is given by the line after EFFECTIVE
-        ground_state = String(lines[2])
+function parse_coll_type(lines)
+    if lines[1] in keys(KEYWORD_DICT)
+        states = strip.(split(lines[2], "->"))
+        threshold_or_mass_ratio = parse(Float64, strip(split(lines[3], '/')[1]))
+        return KEYWORD_DICT[lines[1]]("e",states..., threshold_or_mass_ratio)
 
-        # mass_ratio is given by the next line
-        mass_ratio = parse(Float64, strip(split(lines[3], '/')[1]))
-
-        EffectiveCrossSection(
-            ground_state, 
-            mass_ratio, 
-            comment, 
-            DateTime(updated_str), 
-            LinearInterpolation(energy, cs, extrapolation_bc=Line())
-        )
+    # ion cross sections do not start with the collision type keyword, but with
+    # the SPECIES field (at least for the cases we have seen so far)
+    elseif startswith(lines[1],"SPECIES:")
+        projectile, target = strip.(split(lines[1][9:end], '/'))
+        type = split( 
+            lines[findfirst(l -> startswith(l, "PROCESS"),lines[1:end])],
+            ','
+        )[end] |> strip
+        # error("Ions not implemented yet")
+        return KEYWORD_DICT[type](projectile,target)
     end
 end
 
-
 const KEYWORD_DICT = Dict(
-                        "ELASTIC" => ElasticCrossSection,
-                        "EFFECTIVE" => EffectiveCrossSection,
-                        "EXCITATION" => ExcitationCrossSection,
-                        "IONIZATION" => IonizationCrossSection
+                        "ELASTIC" => Elastic,
+                        "EFFECTIVE" => Effective,
+                        "EXCITATION" => Excitation,
+                        "IONIZATION" => Ionization,
+                        "Isotropic" => Isotropic,
+                        "Backscat" => BackScatter
 )
 
 
-function load_database(filename; ground_state=nothing)
-    cross_sections = Dict()
+function load_database(filename; target=nothing)
+    cross_sections = CrossSection[] 
     cs_string = ""
     sep_counter = -1
 	open(filename) do file 
 		for line in eachline(file)
-            if strip(line) in keys(KEYWORD_DICT)
+            if strip(line) in keys(KEYWORD_DICT) #|| occursin("SPECIES:", line)
                 cs_string = ""
                 sep_counter = 0
 			end
@@ -164,17 +147,7 @@ function load_database(filename; ground_state=nothing)
                 end
                 if sep_counter == 2
                     cs = parse_string(cs_string)
-                    if ground_state === nothing || cs.ground_state == ground_state
-                        if cs isa ElasticCrossSection
-                            cross_sections[(cs.ground_state, "elastic")] = cs
-                        elseif cs isa EffectiveCrossSection
-                            cross_sections[(cs.ground_state, "effective")] = cs
-                        elseif cs isa ExcitationCrossSection
-                            cross_sections[(cs.ground_state, cs.excited_state)] = cs
-                        elseif cs isa IonizationCrossSection
-                            cross_sections[(cs.ground_state, cs.excited_state)] = cs
-                        end
-                    end
+                    push!(cross_sections, cs)
                 end
             end
 		end

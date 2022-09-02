@@ -14,9 +14,10 @@ UPDATED: 2010-03-02 16:19:07
 
 cs = parse_string(string)
 
-@test cs.ground_state == "Ar" 
-@test cs.excited_state == "Ar^+" 
-@test cs.threshold_energy == 1.58e1 
+@test cs.type.projectile == "e" 
+@test cs.type.target == "Ar" 
+@test cs.type.excited_state == "Ar^+" 
+@test cs.type.threshold_energy == 1.58e1 
 @test cs.comment == "RAPP-SCHRAM"
 @test cs.updated == DateTime("2010-03-02T16:19:07")
 @test cs.cross_section(1e3) == 8.6e-21

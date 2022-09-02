@@ -1,8 +1,5 @@
 # LXCat.jl
 
-## Tests
-As I am not sure about the Copyright of the data in the LXCat database 
-(the terms of service prohibit redistribution of the data), this repo does not
-come with any data sets. If you want to perform the tests, please download
-the Siglo dataset file which is supplied with Bolsig+ and place it in a folder 
-called `data`.
+## Test data
+The data used to test the interface of this package does not correspond to any
+real cross-section data. It is only intended to be used in the tests!

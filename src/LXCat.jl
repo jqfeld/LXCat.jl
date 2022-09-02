@@ -5,7 +5,7 @@ using Interpolations
 
 export load_database, parse_string
 export Elastic, Effective, Excitation,
-       Ionization, CrossSection
+       Ionization, Isotropic, BackScatter, CrossSection
 
 
 abstract type AbstractCrossSection end;
@@ -134,7 +134,7 @@ function load_database(filename; target=nothing)
     sep_counter = -1
 	open(filename) do file 
 		for line in eachline(file)
-            if strip(line) in keys(KEYWORD_DICT) #|| occursin("SPECIES:", line)
+            if strip(line) in keys(KEYWORD_DICT) || occursin("SPECIES:", line)
                 cs_string = ""
                 sep_counter = 0
 			end

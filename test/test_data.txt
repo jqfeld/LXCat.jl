@@ -1,0 +1,109 @@
+This is  just some test data. Any similarities with real data from the LXCat
+database are accidental or marked in the comments with the corresponding
+references.
+
+THE DATA IN THIS FILE IS NOT FOR THE USE IN PLASMA MODELING, BUT ONLY FOR
+TESTING THIS PACKAGE!
+
+Some dashed line to check, if the parser gets confused
+------------------------------------------------------
+
+
+COMENT
+Ar
+This is a comment block concerning the argon atom. LXCat.jl does not support
+them yet, but their existance should not produce any errors or failing tests.
+
+EFFECTIVE
+Ar
+  1.360e-5 / mass ratio
+COMMENT: EFFECTIVE MOMENTUM-TRANSFER CROSS SECTION
+UPDATED: 2022-06-06 18:21:14
+------------------------------------------------------------
+ 7.7780e-1	7.9000e-21
+ 2.0000e+4	2.9500e-21
+------------------------------------------------------------
+
+EXCITATION
+Ar -> Ar*(11.5eV)
+  1.150e+1   / threshold energy
+COMMENT: some comment for some dearanged data
+UPDATED: 2022-09-23 12:41:34
+------------------------------------------------------------
+ 0.0000	1.7700e-21
+0.5000e+3	1.3600e-21
+     2.0000e+3	1.1000e-21
+ 3.0000e+3	8.3000e-22
+3.0200e+3	5.8000e-22
+         7.3000e+3	8.1000e-22
+ 3.0000e+4	1.5000e-22
+------------------------------------------------------------
+
+SPECIES: Ar^+ / Ar
+PROCESS: Ar+ + Ar -> , Isotropic
+PARAM.:  Mi = 39.948, Mi/M = 1, complete set
+COMMENT: Phelps database retrieved on 02.09.2022. Some datapoints omitted.
+COMMENT: Ar+ in Ar: Phelps, J. Appl. Phys. 76, 747 (1994).
+COMMENT: 2E-19/(2.*col(A))^0.5/(1.+2.*col(A))+3E-19*2.*col(A)/(1.+2.*col(A)/3.)^2.3.
+UPDATED: 2016-03-25 18:22:30
+COLUMNS: Energy (eV) | Cross section (m2)
+-----------------------------
+ 0.000000e+0	1.413940e-17
+ 1.000000e-4	1.413940e-17
+ 1.200000e-4	1.290690e-17
+ 1.400000e-4	1.194900e-17
+ 1.600000e-4	1.117690e-17
+ 1.900000e-4	1.025600e-17
+1.200000e-3	4.073430e-18
+ 1.400000e-3	3.769930e-18
+ 1.600000e-3	3.525210e-18
+ 1.900000e-3	3.233280e-18
+1.000000e-2	1.392390e-18
+ 1.200000e-2	1.267810e-18
+ 1.400000e-2	1.170900e-18
+ 1.600000e-2	1.092730e-18
+ 1.900000e-2	9.994930e-19
+5.200000e-2	5.905990e-19
+ 6.200000e-2	5.391950e-19
+ 7.400000e-2	4.925980e-19
+ 8.800000e-2	4.516950e-19
+3.100000e+0	1.524680e-19
+ 3.700000e+0	1.359720e-19
+ 4.400000e+0	1.200290e-19
+ 7.400000e+0	7.721610e-20
+ 1.600000e+1	3.482290e-20
+ 2.600000e+1	1.991740e-20
+ 4.400000e+1	1.054790e-20
+ 6.200000e+1	6.891660e-21
+ 8.800000e+1	4.434790e-21
+ 1.400000e+2	2.455490e-21
+ 1.600000e+2	2.069450e-21
+ 1.000000e+4	9.687080e-24
+-----------------------------
+
+SPECIES: Ar^+ / Ar
+PROCESS: Ar+ + Ar -> , Backscat
+PARAM.:  Mi = 39.948, Mi/M = 1, complete set
+UPDATED: 2022-09-02 07:03:24
+COLUMNS: Energy (eV) | Cross section (m2)
+-----------------------------
+ 0.000000e+0	1.104590e-17
+ 1.000000e-4	1.104590e-17
+ 1.200000e-4	9.516760e-18
+ 1.400000e-4	8.384720e-18
+ 7.400000e+2	2.769620e-19
+ 8.800000e+2	2.722300e-19
+ 1.000000e+3	2.687880e-19
+ 1.000000e+4	2.135770e-19
+-----------------------------
+
+ELASTIC
+CH4
+  3.424e-5 / mass ratio
+UPDATED: 2022-09-02 11:05:07
+------------------------------------------------------------
+ 0.0000e+0	1.1100e-19
+ 1.0    121.2e-18
+ 1.0000e+3	3.14000e-21
+------------------------------------------------------------
+

@@ -4,6 +4,7 @@ string = """
 SPECIES: Ar^+ / Ar
 PROCESS: Ar+ + Ar -> , Isotropic
 PARAM.:  Mi = 39.948, Mi/M = 1, complete set
+COMMENT: Phelps database retrieved on 02.09.2022. Some datapoints omitted.
 COMMENT: Ar+ in Ar: Phelps, J. Appl. Phys. 76, 747 (1994).
 COMMENT: 2E-19/(2.*col(A))^0.5/(1.+2.*col(A))+3E-19*2.*col(A)/(1.+2.*col(A)/3.)^2.3.
 UPDATED: 2016-03-25 18:22:30
@@ -49,7 +50,7 @@ cs = parse_string(string)
 @test cs.type.target == "Ar" 
 
 #TODO: maybe add newlines to the comments?
-@test cs.comment == "Ar+ in Ar: Phelps, J. Appl. Phys. 76, 747 (1994).2E-19/(2.*col(A))^0.5/(1.+2.*col(A))+3E-19*2.*col(A)/(1.+2.*col(A)/3.)^2.3."
+@test cs.comment == "Phelps database retrieved on 02.09.2022. Some datapoints omitted.Ar+ in Ar: Phelps, J. Appl. Phys. 76, 747 (1994).2E-19/(2.*col(A))^0.5/(1.+2.*col(A))+3E-19*2.*col(A)/(1.+2.*col(A)/3.)^2.3."
 
 @test cs.updated == DateTime("2016-03-25T18:22:30")
 @test cs.cross_section(1.6e2) == 2.069450e-21

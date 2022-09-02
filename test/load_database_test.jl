@@ -1,7 +1,8 @@
 using LXCat, Interpolations, Dates, Test
 
-db = load_database("../data/SigloDataBase-LXCat-04Jun2013.txt")
+db = load_database("test_data.txt")
 
 
-@test first(filter(x -> x isa CrossSection{Effective} && x.type.target == "Ar",db))(1e1) == 1.5e-19
+@test first(filter(x -> x isa CrossSection{Effective} && x.type.target == "Ar",db))(2e4) == 2.9500e-21
+
 

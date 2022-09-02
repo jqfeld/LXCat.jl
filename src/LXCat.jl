@@ -87,7 +87,7 @@ function parse_string(s)
     energy = Float64[]
     cs = Float64[]
     for l in lines[cs_start:cs_end]
-        (e, c) = split(strip(l), '\t')
+        (e, c) = split(strip(l))
         push!(energy, parse(Float64, e))
         push!(cs, parse(Float64, c))
     end

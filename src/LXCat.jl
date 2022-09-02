@@ -134,7 +134,7 @@ function load_database(filename; target=nothing)
     sep_counter = -1
 	open(filename) do file 
 		for line in eachline(file)
-            if strip(line) in keys(KEYWORD_DICT) || occursin("SPECIES:", line)
+            if (strip(line) in keys(KEYWORD_DICT) || occursin("SPECIES:", line)) && sep_counter < 0
                 cs_string = ""
                 sep_counter = 0
 			end
@@ -144,6 +144,7 @@ function load_database(filename; target=nothing)
                     sep_counter += 1
                 end
                 if sep_counter == 2
+                    sep_counter = -1
                     cs = parse_string(cs_string)
                     push!(cross_sections, cs)
                 end

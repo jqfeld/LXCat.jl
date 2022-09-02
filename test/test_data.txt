@@ -17,8 +17,13 @@ them yet, but their existance should not produce any errors or failing tests.
 EFFECTIVE
 Ar
   1.360e-5 / mass ratio
-COMMENT: EFFECTIVE MOMENTUM-TRANSFER CROSS SECTION
-UPDATED: 2022-06-06 18:21:14
+SPECIES: e / Ar
+PROCESS: E + Ar -> E + Ar, Effective
+PARAM.:  m/M = 0.0000136, complete set
+COMMENT: Corrected 29 Dec 2010 to reflect values in Fig. 1 of NIFS-DATA-72 (2003). Values
+COMMENT: attributed to Hayashi on AV Phelps' ftp site are out of date.
+UPDATED: 2014-02-15 08:26:59
+COLUMNS: Energy (eV) | Cross section (m2)
 ------------------------------------------------------------
  7.7780e-1	7.9000e-21
  2.0000e+4	2.9500e-21

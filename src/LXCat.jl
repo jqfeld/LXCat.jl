@@ -60,8 +60,6 @@ struct BackScatter <: AbstractCollision
 end
 
 
-get_collision_args(x, args...) = error("Not implemented for collision type " * string(x))
-
 
 function parse_string(s)
     lines = split(s, '\n')

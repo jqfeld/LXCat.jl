@@ -109,9 +109,9 @@ function parse_coll_type(lines)
     # for electron cross sections the first line determines the collision type
     if lines[1] in keys(KEYWORD_DICT)
         type =  KEYWORD_DICT[lines[1]]
-        # TODO: the following line might cause problems for bidirectional
-        # process indicated with "<->"
-        states = strip.(split(lines[2], "->"))
+        # regex to catch both "<->" and "->"
+        states = strip.(split(lines[2], r"<*->"))
+        println(states)
         
         # the third line contains additional info on the collision process
         # this depends on the collision type:

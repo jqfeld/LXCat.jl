@@ -40,7 +40,11 @@ struct Excitation <: AbstractCollision
     target::String
     excited_state::String
     threshold_energy::Float64
+    stat_weight_ratio::Float64
 end
+# default to statistical weight ratio of 1 
+Excitation(projectile,target,excited_state,threshold_energy) = 
+    Excitation(projectile,target,excited_state,threshold_energy,1.0)
 
 struct Ionization <: AbstractCollision
     projectile::String
@@ -48,6 +52,8 @@ struct Ionization <: AbstractCollision
     excited_state::String
     threshold_energy::Float64
 end
+
+#TODO: add attachment collisions
 
 struct Isotropic <: AbstractCollision
     projectile::String
@@ -100,10 +106,22 @@ function parse_string(s)
 end
 
 function parse_coll_type(lines)
+    # for electron cross sections the first line determines the collision type
     if lines[1] in keys(KEYWORD_DICT)
+        type =  KEYWORD_DICT[lines[1]]
+        # TODO: the following line might cause problems for bidirectional
+        # process indicated with "<->"
         states = strip.(split(lines[2], "->"))
-        threshold_or_mass_ratio = parse(Float64, strip(split(lines[3], '/')[1]))
-        return KEYWORD_DICT[lines[1]]("e",states..., threshold_or_mass_ratio)
+        
+        # the third line contains additional info on the collision process
+        # this depends on the collision type:
+        # - for effective and elastic collisions it is the mass ratio
+        # - for excitation of ionization it is the threshold energy +
+        #   optionally the ratio of statistical weights of the states
+        # First remove possible comments (everything behind '/')
+        info_str = strip(split(lines[3], '/')[1])
+        additional_info = parse.(Float64, strip.(split(info_str)))
+        return type("e",states..., additional_info...)
 
     # ion cross sections do not start with the collision type keyword, but with
     # the SPECIES field (at least for the cases we have seen so far)

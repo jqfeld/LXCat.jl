@@ -111,7 +111,6 @@ function parse_coll_type(lines)
         type =  KEYWORD_DICT[lines[1]]
         # regex to catch both "<->" and "->"
         states = strip.(split(lines[2], r"<*->"))
-        println(states)
         
         # the third line contains additional info on the collision process
         # this depends on the collision type:

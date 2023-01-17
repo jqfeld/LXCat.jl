@@ -5,10 +5,10 @@ using Interpolations
 
 export load_database, parse_string
 export Elastic, Effective, Excitation,
-    Ionization, Isotropic, BackScatter, CrossSection
+       Ionization, Isotropic, BackScatter, CrossSection, Attachment
 
 
-abstract type AbstractCrossSection end
+abstract type AbstractCrossSection end;
 
 function (cs::AbstractCrossSection)(E)
     max(0, cs.cross_section(E))
@@ -21,7 +21,7 @@ struct CrossSection{T,I} <: AbstractCrossSection
     cross_section::I
 end
 
-abstract type AbstractCollision end
+abstract type AbstractCollision end;
 
 struct Elastic <: AbstractCollision
     projectile::String
@@ -43,8 +43,8 @@ struct Excitation <: AbstractCollision
     stat_weight_ratio::Float64
 end
 # default to statistical weight ratio of 1 
-Excitation(projectile, target, excited_state, threshold_energy) =
-    Excitation(projectile, target, excited_state, threshold_energy, 1.0)
+Excitation(projectile,target,excited_state,threshold_energy) = 
+    Excitation(projectile,target,excited_state,threshold_energy,1.0)
 
 struct Ionization <: AbstractCollision
     projectile::String
@@ -53,7 +53,11 @@ struct Ionization <: AbstractCollision
     threshold_energy::Float64
 end
 
-#TODO: add attachment collisions
+struct Attachment <: AbstractCollision
+    projectile::String
+    target::String
+    excited_state::String
+end
 
 struct Isotropic <: AbstractCollision
     projectile::String
@@ -67,7 +71,7 @@ end
 
 
 
-function parse_string(s, interpolation_type=:lin)
+function parse_string(s)
     lines = split(s, '\n')
 
     # find start and end lines cross section data
@@ -83,11 +87,11 @@ function parse_string(s, interpolation_type=:lin)
             comment *= replace(l, "COMMENT: " => "")
         end
         if startswith(l, "UPDATED")
-            updated_str = replace(l, "UPDATED: " => "",)
+            updated_str = replace(l, "UPDATED: " => "", )
             updated_str = replace(updated_str, " " => "T")
         end
     end
-
+    
     energy = Float64[]
     cs = Float64[]
     for l in lines[cs_start:cs_end]
@@ -101,34 +105,17 @@ function parse_string(s, interpolation_type=:lin)
     cs = cs[perm]
 
     type = parse_coll_type(lines[1:cs_start])
-    if interpolation_type == :linear
-        println("linear")
-        interpolated_cs = linear_interpolation(energy, cs, extrapolation_bc=Line())
-    elseif interpolation_type == :logarithm
-        println("log")
-        interpolated_cs = logarithm_interpolation(energy, cs)
-    end
-    return CrossSection(type, comment, DateTime(updated_str), interpolated_cs)
+    return CrossSection(type, comment, DateTime(updated_str), linear_interpolation(energy, cs, extrapolation_bc=Line()))
 
-end
-
-function logarithm_interpolation(energy, cs)
-    @. cs = 10 * log10(cs)
-    itp = LinearInterpolation(energy, cs, extrapolation_bc=Line())
-    itp
-    # lut_interpolated = interpolation(energy)
-    # lut_interpolated = 10 .^ (lut_interpolated / 10)
-    # @. lut_interpolated[(isnan(lut_interpolated))] = 0
-    # lut_interpolated
 end
 
 function parse_coll_type(lines)
     # for electron cross sections the first line determines the collision type
-    if lines[1] in keys(KEYWORD_DICT)
-        type = KEYWORD_DICT[lines[1]]
+    if lines[1] in keys(KEYWORD_DICT) && !occursin("ATTACHMENT", lines[1])
+        type =  KEYWORD_DICT[lines[1]]
         # regex to catch both "<->" and "->"
         states = strip.(split(lines[2], r"<*->"))
-
+        
         # the third line contains additional info on the collision process
         # this depends on the collision type:
         # - for effective and elastic collisions it is the mass ratio
@@ -137,42 +124,44 @@ function parse_coll_type(lines)
         # First remove possible comments (everything behind '/')
         info_str = strip(split(lines[3], '/')[1])
         additional_info = parse.(Float64, strip.(split(info_str)))
-        return type("e", states..., additional_info...)
-
-        # ion cross sections do not start with the collision type keyword, but with
-        # the SPECIES field (at least for the cases we have seen so far)
-    elseif startswith(lines[1], "SPECIES:")
+        return type("e",states..., additional_info...)
+    # ion cross sections do not start with the collision type keyword, but with
+    # the SPECIES field (at least for the cases we have seen so far)
+    elseif startswith(lines[1],"SPECIES:")
         projectile, target = strip.(split(lines[1][9:end], '/'))
-        type = split(
-            lines[findfirst(l -> startswith(l, "PROCESS"), lines[1:end])],
+        type = split( 
+            lines[findfirst(l -> startswith(l, "PROCESS"),lines[1:end])],
             ','
         )[end] |> strip
         # error("Ions not implemented yet")
-        return KEYWORD_DICT[type](projectile, target)
+        return KEYWORD_DICT[type](projectile,target)
+    elseif startswith(lines[1], "ATTACHMENT")
+        target, excited_state = strip.(split(lines[2], "->"))
+        return Attachment("e", target, excited_state)
     end
 end
 
 const KEYWORD_DICT = Dict(
-    "ELASTIC" => Elastic,
-    "EFFECTIVE" => Effective,
-    "EXCITATION" => Excitation,
-    "IONIZATION" => Ionization,
-    "Isotropic" => Isotropic,
-    "Backscat" => BackScatter
+                        "ELASTIC" => Elastic,
+                        "EFFECTIVE" => Effective,
+                        "EXCITATION" => Excitation,
+                        "IONIZATION" => Ionization,
+                        "Isotropic" => Isotropic,
+                        "Backscat" => BackScatter,
+                        "ATTACHMENT" => Attachment
 )
 
 
-function load_database(filename; target=nothing, interpolation_type=:linear)
-
-    cross_sections = CrossSection[]
+function load_database(filename; target=nothing)
+    cross_sections = CrossSection[] 
     cs_string = ""
     sep_counter = -1
-    open(filename) do file
-        for line in eachline(file)
+	open(filename) do file 
+		for line in eachline(file)
             if (strip(line) in keys(KEYWORD_DICT) || occursin("SPECIES:", line)) && sep_counter < 0
                 cs_string = ""
                 sep_counter = 0
-            end
+			end
             if sep_counter >= 0
                 cs_string *= line * '\n'
                 if startswith(line, "---")
@@ -180,12 +169,12 @@ function load_database(filename; target=nothing, interpolation_type=:linear)
                 end
                 if sep_counter == 2
                     sep_counter = -1
-                    cs = parse_string(cs_string, interpolation_type)
+                    cs = parse_string(cs_string)
                     push!(cross_sections, cs)
                 end
             end
-        end
-    end
+		end
+	end
     cross_sections
 end
 

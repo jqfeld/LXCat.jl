@@ -5,7 +5,7 @@ using Interpolations
 
 export load_database, parse_string
 export Elastic, Effective, Excitation,
-       Ionization, Isotropic, BackScatter, CrossSection
+       Ionization, Isotropic, BackScatter, CrossSection, Attachment
 
 
 abstract type AbstractCrossSection end;
@@ -53,7 +53,11 @@ struct Ionization <: AbstractCollision
     threshold_energy::Float64
 end
 
-#TODO: add attachment collisions
+struct Attachment <: AbstractCollision
+    projectile::String
+    target::String
+    excited_state::String
+end
 
 struct Isotropic <: AbstractCollision
     projectile::String
@@ -107,7 +111,7 @@ end
 
 function parse_coll_type(lines)
     # for electron cross sections the first line determines the collision type
-    if lines[1] in keys(KEYWORD_DICT)
+    if lines[1] in keys(KEYWORD_DICT) && !occursin("ATTACHMENT", lines[1])
         type =  KEYWORD_DICT[lines[1]]
         # regex to catch both "<->" and "->"
         states = strip.(split(lines[2], r"<*->"))
@@ -121,7 +125,6 @@ function parse_coll_type(lines)
         info_str = strip(split(lines[3], '/')[1])
         additional_info = parse.(Float64, strip.(split(info_str)))
         return type("e",states..., additional_info...)
-
     # ion cross sections do not start with the collision type keyword, but with
     # the SPECIES field (at least for the cases we have seen so far)
     elseif startswith(lines[1],"SPECIES:")
@@ -132,6 +135,9 @@ function parse_coll_type(lines)
         )[end] |> strip
         # error("Ions not implemented yet")
         return KEYWORD_DICT[type](projectile,target)
+    elseif startswith(lines[1], "ATTACHMENT")
+        target, excited_state = strip.(split(lines[2], "->"))
+        return Attachment("e", target, excited_state)
     end
 end
 
@@ -141,7 +147,8 @@ const KEYWORD_DICT = Dict(
                         "EXCITATION" => Excitation,
                         "IONIZATION" => Ionization,
                         "Isotropic" => Isotropic,
-                        "Backscat" => BackScatter
+                        "Backscat" => BackScatter,
+                        "ATTACHMENT" => Attachment
 )
 
 

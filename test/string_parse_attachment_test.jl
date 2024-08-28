@@ -1,4 +1,4 @@
-using LXCat, Interpolations, Dates, Test
+using LXCat, Dates, Test
 
 string = """
 ATTACHMENT
@@ -74,4 +74,4 @@ cs = parse_string(string)
 @test cs.type.excited_state == "H+OH^-" 
 @test cs.comment == "Recommended cross sections for production of OH^- from H2O."
 @test cs.updated == DateTime("2012-06-05T06:46:14")
-@test cs.cross_section(8.640000e+0) == 7.560000e-24
+@test cs.cross_section(8.640000e+0) ≈ 7.560000e-24

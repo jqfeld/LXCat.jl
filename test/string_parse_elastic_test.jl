@@ -1,5 +1,6 @@
 using LXCat, DataInterpolations, Dates, Test
 
+
 string = """ELASTIC
 CH4
   3.424e-5 / mass ratio

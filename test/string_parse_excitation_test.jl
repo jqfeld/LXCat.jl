@@ -1,5 +1,6 @@
 using LXCat, DataInterpolations, Dates, Test
 
+
 string = """EXCITATION
 Ar -> Ar*(11.5eV)
   1.150e+1   / threshold energy
@@ -17,6 +18,7 @@ UPDATED: 2010-06-23 11:41:34
 """
 
 cs = parse_string(string)
+
 
 @test cs.type.projectile == "e"
 @test cs.type.target == "Ar"

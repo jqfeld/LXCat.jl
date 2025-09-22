@@ -1,4 +1,4 @@
-using LXCat, Interpolations, Dates, Test
+using LXCat, DataInterpolations, Dates, Test
 
 string = """
 ATTACHMENT

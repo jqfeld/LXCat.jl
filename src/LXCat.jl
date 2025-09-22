@@ -1,7 +1,7 @@
 module LXCat
 
 using Dates
-using Interpolations
+using DataInterpolations
 
 export load_database, parse_string
 export Elastic, Effective, Excitation,
@@ -101,12 +101,26 @@ function parse_string(s)
     end
     # sorting by energy, if the data is not in the right order
     perm = sortperm(energy)
-    energy = Interpolations.deduplicate_knots!(energy[perm])
+    energy = deduplicate_knots!(energy[perm])
     cs = cs[perm]
 
     type = parse_coll_type(lines[1:cs_start])
-    return CrossSection(type, comment, DateTime(updated_str), linear_interpolation(energy, cs, extrapolation_bc=Line()))
+    interpolation = LinearInterpolation(
+        cs,
+        energy;
+        extrapolation = ExtrapolationType.Extension,
+    )
+    return CrossSection(type, comment, DateTime(updated_str), interpolation)
 
+end
+
+function deduplicate_knots!(knots::Vector{Float64})
+    for i in 2:length(knots)
+        if knots[i] <= knots[i - 1]
+            knots[i] = nextfloat(knots[i - 1])
+        end
+    end
+    knots
 end
 
 function parse_coll_type(lines)

@@ -1,4 +1,4 @@
-using LXCat, Interpolations, Dates, Test
+using LXCat, Dates, Test
 
 string = """ELASTIC
 CH4
@@ -15,7 +15,7 @@ cs = parse_string(string)
 
 @test cs.type.projectile == "e" 
 @test cs.type.target == "CH4" 
-@test cs.type.mass_ratio == 3.424e-5
+@test cs.type.mass_ratio ≈ 3.424e-5
 @test cs.comment == ""
 @test cs.updated == DateTime("2022-09-02T11:05:07")
-@test cs.cross_section(1e3) == 3.14e-21
+@test cs.cross_section(1e3) ≈ 3.14e-21

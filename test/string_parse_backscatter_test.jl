@@ -1,4 +1,4 @@
-using LXCat, Interpolations, Dates, Test
+using LXCat, Dates, Test
 
 string = """
 SPECIES: Ar^+ / Ar
@@ -53,4 +53,4 @@ cs = parse_string(string)
 #TODO: maybe add newlines to the comments?
 @test cs.comment == "Ar+ in Ar: Phelps, J. Appl. Phys. 76, 747 (1994).0.5*(1.15E-18*(1.+0.015/2./col(A))^0.6/(2.*col(A))^0.1-2E-19/(2.*col(A))^0.5/(1.+2.*col(A))-3E-19*2.*col(A)/(1.+2.*col(A)/3.)^2.3)."
 @test cs.updated == DateTime("2011-10-30T07:03:24")
-@test cs.cross_section(8800.) == 2.163240e-19
+@test cs.cross_section(8800.) ≈ 2.163240e-19

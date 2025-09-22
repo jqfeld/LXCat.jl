@@ -1,14 +1,14 @@
 name = "LXCat"
 uuid = "98de444b-ff9e-46e7-a543-7c3041db51ee"
 authors = ["Jan Kuhfeld <jan.kuhfeld@rub.de>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
+DataInterpolations = "82cc6244-b520-54b8-b5a6-8a565e85f1d0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
-Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-Interpolations = "0.14"
+DataInterpolations = "6.2.0"
 SafeTestsets = "0.0.1"

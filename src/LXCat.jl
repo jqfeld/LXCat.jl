@@ -71,7 +71,7 @@ end
 
 
 
-function parse_string(s; extrapolate=true, cache_parameters=true)
+function parse_string(s; extrapolation = ExtrapolationType.Extension, cache_parameters=true)
   lines = split(s, '\n')
 
   # find start and end lines cross section data
@@ -106,7 +106,7 @@ function parse_string(s; extrapolate=true, cache_parameters=true)
   cs = cs[perm]
 
   type = parse_coll_type(lines[1:cs_start])
-  return CrossSection(type, comment, DateTime(updated_str), LinearInterpolation(cs, energy; extrapolate, cache_parameters))
+  return CrossSection(type, comment, DateTime(updated_str), LinearInterpolation(cs, energy; extrapolation, cache_parameters))
 
 
 end

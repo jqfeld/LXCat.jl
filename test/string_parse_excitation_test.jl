@@ -1,4 +1,4 @@
-using LXCat, Interpolations, Dates, Test
+using LXCat, DataInterpolations, Dates, Test
 
 string = """EXCITATION
 Ar -> Ar*(11.5eV)
@@ -24,8 +24,9 @@ cs = parse_string(string)
 @test cs.type.threshold_energy == 1.15e1
 @test cs.comment == "All excitation is grouped into this one level."
 @test cs.updated == DateTime("2010-06-23T11:41:34")
+@test cs.cross_section isa LinearInterpolation
 @test cs.cross_section(1e3) == 1.77e-21
-@test collect(Interpolations.knots(cs.cross_section)) == [1000.0, 1500.0, 2000.0, 3000.0, 5000.0, 7000.0, 10000.0]
+@test collect(cs.cross_section.t) == [1000.0, 1500.0, 2000.0, 3000.0, 5000.0, 7000.0, 10000.0]
 
 bidirectional_string = """EXCITATION
 N2(v=0) <-> N2(v=1)
@@ -47,5 +48,6 @@ bidirectional_cs = parse_string(bidirectional_string)
 @test bidirectional_cs.type.stat_weight_ratio == 3.5e-1
 @test bidirectional_cs.comment == ""
 @test bidirectional_cs.updated == DateTime("2021-01-01T12:34:56")
+@test bidirectional_cs.cross_section isa LinearInterpolation
 @test bidirectional_cs.cross_section(3.75) ≈ 3.75e-21 atol=eps()
-@test collect(Interpolations.knots(bidirectional_cs.cross_section)) == [0.0, 2.5, 5.0]
+@test collect(bidirectional_cs.cross_section.t) == [0.0, 2.5, 5.0]

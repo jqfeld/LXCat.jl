@@ -90,6 +90,7 @@ function parse_string(s; extrapolate=true, cache_parameters=true)
       updated_str = replace(l, "UPDATED: " => "",)
       updated_str = replace(updated_str, " " => "T")
     end
+
   end
 
   energy = Float64[]
@@ -107,6 +108,16 @@ function parse_string(s; extrapolate=true, cache_parameters=true)
   type = parse_coll_type(lines[1:cs_start])
   return CrossSection(type, comment, DateTime(updated_str), LinearInterpolation(cs, energy; extrapolate, cache_parameters))
 
+
+end
+
+function deduplicate_knots!(knots::Vector{Float64})
+    for i in 2:length(knots)
+        if knots[i] <= knots[i - 1]
+            knots[i] = nextfloat(knots[i - 1])
+        end
+    end
+    knots
 end
 
 function parse_coll_type(lines)

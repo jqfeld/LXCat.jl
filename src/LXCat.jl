@@ -2,8 +2,9 @@ module LXCat
 
 using Dates
 using DataInterpolations
+using Printf
 
-export load_database, parse_string
+export load_database, parse_string, write_database, write_cross_section
 export Elastic, Effective, Excitation,
   Ionization, Isotropic, BackScatter, CrossSection, Attachment
 
@@ -187,6 +188,86 @@ function load_database(filename; target=nothing)
     end
   end
   cross_sections
+end
+
+# ── Writing ──────────────────────────────────────────────────────────────
+# The inverse of parse_string/parse_coll_type above. `parse_string` only
+# ever reads a fixed set of header lines per collision kind (see
+# `parse_coll_type`) and ignores everything else (e.g. the informational
+# SPECIES:/PROCESS:/PARAM./COLUMNS: lines real LXCat exports carry alongside
+# electron-process headers) — so only those fields are reproduced here.
+# Consequently `write_database` round-trips a `CrossSection` through
+# `load_database` exactly *in value* (collision fields, comment, timestamp,
+# energy/cross-section samples), not in exact byte formatting: the original
+# numeric formatting isn't retained, and neither is the "->" vs "<->" choice
+# on the species line (`parse_coll_type` treats them identically via the
+# `r"<*->"` split regex, so `AbstractCollision` doesn't store which one a
+# source file used) — "->" is written uniformly here.
+
+_lxcat_keyword(::Elastic) = "ELASTIC"
+_lxcat_keyword(::Effective) = "EFFECTIVE"
+_lxcat_keyword(::Excitation) = "EXCITATION"
+_lxcat_keyword(::Ionization) = "IONIZATION"
+_lxcat_keyword(::Isotropic) = "Isotropic"
+_lxcat_keyword(::BackScatter) = "Backscat"
+
+# Line 2 for electron processes: bare target (Elastic/Effective, which have
+# no excited state) or "target -> excited_state" (Excitation/Ionization/
+# Attachment).
+_species_line(c::Union{Elastic,Effective}) = c.target
+_species_line(c::Union{Excitation,Ionization,Attachment}) = "$(c.target) -> $(c.excited_state)"
+
+# Line 3 for electron processes: mass ratio, or threshold energy [+
+# statistical weight ratio] — always written for Excitation even when the
+# ratio is the default 1.0, since `parse_coll_type` accepts either 1 or 2
+# numbers there interchangeably.
+_info_line(c::Union{Elastic,Effective}) = string(c.mass_ratio)
+_info_line(c::Ionization) = string(c.threshold_energy)
+_info_line(c::Excitation) = "$(c.threshold_energy)  $(c.stat_weight_ratio)"
+
+_header_lines(c::Attachment) = ["ATTACHMENT", _species_line(c)]
+_header_lines(c::Union{Isotropic,BackScatter}) =
+  ["SPECIES: $(c.projectile) / $(c.target)", "PROCESS: , $(_lxcat_keyword(c))"]
+_header_lines(c::AbstractCollision) = [_lxcat_keyword(c), _species_line(c), _info_line(c)]
+
+"""
+    write_cross_section(io::IO, cs::CrossSection)
+
+Write one [`CrossSection`](@ref) as a single LXCat-format record — the
+inverse of [`parse_string`](@ref). See the module notes above `_lxcat_keyword`
+for what is and isn't preserved on a round trip.
+"""
+function write_cross_section(io::IO, cs::CrossSection)
+  for line in _header_lines(cs.type)
+    println(io, line)
+  end
+  isempty(cs.comment) || println(io, "COMMENT: ", cs.comment)
+  println(io, "UPDATED: ", Dates.format(cs.updated, "yyyy-mm-dd HH:MM:SS"))
+
+  separator = "-"^60
+  println(io, separator)
+  energy, cross_section = cs.cross_section.t, cs.cross_section.u
+  for (e, c) in zip(energy, cross_section)
+    println(io, @sprintf("%.6e\t%.6e", e, c))
+  end
+  println(io, separator)
+  println(io)
+  return nothing
+end
+
+"""
+    write_database(filename, cross_sections)
+
+Write `cross_sections` (as returned by [`load_database`](@ref)) to `filename`
+in LXCat's text format, one [`write_cross_section`](@ref) record per entry.
+"""
+function write_database(filename::AbstractString, cross_sections)
+  open(filename, "w") do io
+    for cs in cross_sections
+      write_cross_section(io, cs)
+    end
+  end
+  return filename
 end
 
 end # module

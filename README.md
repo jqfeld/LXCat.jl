@@ -16,6 +16,11 @@ using LXCat
 cs_array = load_database("/path/to/LXCat/file.txt")
 
 cs_array[1](1.0) # returns cross-section in m^2 for energy 1.0 eV
+
+# write_database() is the inverse of load_database() — round-trips the same
+# collision data, comments, and timestamps, though not necessarily the exact
+# byte formatting of the original file.
+write_database("/path/to/output.txt", cs_array)
 ```
 
 ## Test data

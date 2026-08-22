@@ -10,3 +10,5 @@ using LXCat, Test, SafeTestsets
 
 @safetestset "Database Parsing" begin include("load_database_test.jl") end
 @safetestset "Database Writing" begin include("write_database_test.jl") end
+
+@safetestset "Species Resolution (PlasmaSpecies extension)" begin include("species_ext_test.jl") end

@@ -5,6 +5,7 @@ using DataInterpolations
 using Printf
 
 export load_database, parse_string, write_database, write_cross_section
+export target_label, product_label, target_species, product_species
 export Elastic, Effective, Excitation,
   Ionization, Isotropic, BackScatter, CrossSection, Attachment
 
@@ -69,6 +70,39 @@ struct BackScatter <: AbstractCollision
   projectile::String
   target::String
 end
+
+# ── Species accessors ────────────────────────────────────────────────────────
+
+"Target species label (the raw LXCat string) of a collision or cross section."
+target_label(c::AbstractCollision) = c.target
+target_label(cs::CrossSection) = target_label(cs.type)
+
+"""
+    product_label(c) -> Union{String,Nothing}
+
+Product/excited-state label of a collision or cross section: the raw LXCat
+string for `Excitation`/`Ionization`/`Attachment`, `nothing` for process
+types without one or when the field is empty.
+"""
+product_label(::AbstractCollision) = nothing
+product_label(c::Union{Excitation,Ionization,Attachment}) =
+  isempty(strip(c.excited_state)) ? nothing : c.excited_state
+product_label(cs::CrossSection) = product_label(cs.type)
+
+"""
+    target_species(c; labels=Dict()) -> PlasmaSpecies.Species
+    product_species(c; labels=Dict()) -> Union{PlasmaSpecies.Species,Nothing}
+
+Resolve [`target_label`](@ref)/[`product_label`](@ref) into
+`PlasmaSpecies.Species` (requires `PlasmaSpecies` to be loaded; provided by
+the `LXCatPlasmaSpeciesExt` extension). `labels` maps raw LXCat labels to
+LoKI notation first; anything unparseable falls back to a `StringGas`
+species.
+"""
+function target_species end
+
+@doc (@doc target_species)
+function product_species end
 
 
 

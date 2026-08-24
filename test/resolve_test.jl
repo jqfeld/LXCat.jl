@@ -122,14 +122,9 @@ end
   @test db[1].comment == DB[1].comment
   @test db[1].updated == DB[1].updated
 
-  # string map values are parsed (needs the PlasmaSpecies extension).
-  # Compared structurally: PlasmaSpecies defines no `==` for ReactionFormula,
-  # so two separately built formulas fall back to `===` and compare unequal
-  # even when they mean the same reaction.
+  # string map values are parsed (needs the PlasmaSpecies extension)
   from_strings = resolve(DB, Dict(k => string(v) for (k, v) in REACTIONS))
-  a, b = reaction(from_strings[3]), reaction(db[3])
-  @test a.subs == b.subs && a.prods == b.prods
-  @test a.substoich == b.substoich && a.prodstoich == b.prodstoich
+  @test reaction(from_strings[3]) == reaction(db[3])
 end
 
 @testset "compound products carry stoichiometry" begin

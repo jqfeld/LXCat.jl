@@ -196,5 +196,5 @@ end
 
   # deliberately not forwarded once resolved: `.target` has no single answer
   resolved = with_reaction(exc, p"e + O2 --> e + 2O[3P]")
-  @test_throws ErrorException resolved.target
+  @test_throws FieldError resolved.target
 end

@@ -6,8 +6,8 @@ using PlasmaSpecies: Species, StringGas, ReactionFormula, gas, Electron
 
 # ── Resolved reactions ───────────────────────────────────────────────────────
 
-# String map values are parsed here; the core package's fallback (on ::Any)
-# errors, since parsing needs PlasmaSpecies.
+# String map values are parsed here; the core package's ::Any fallback errors,
+# parsing needing PlasmaSpecies.
 LXCat._parse_reaction(s::AbstractString) = ReactionFormula(s)
 
 _iselectron(sp) = gas(sp) isa Electron
@@ -23,8 +23,8 @@ end
 LXCat.target_label(f::ReactionFormula) = _render(f.subs, f.substoich)
 
 function LXCat.product_label(f::ReactionFormula)
-  # A non-reactive process (elastic, momentum transfer) has no distinct
-  # product, matching what an unresolved database reports for those kinds.
+  # A non-reactive process (elastic, momentum transfer) has no distinct product,
+  # matching what an unresolved database reports for those kinds.
   f.subs == f.prods && f.substoich == f.prodstoich && return nothing
   return _render(f.prods, f.prodstoich)
 end
@@ -43,8 +43,8 @@ function LXCat.product_species(c; labels=Dict{String,String}())
   label === nothing ? nothing : resolve_species(label, labels)
 end
 
-# LoKI-notation parse with a StringGas fallback for labels PlasmaSpecies
-# cannot parse (equality still works, mass does not).
+# LoKI-notation parse with a StringGas fallback for labels PlasmaSpecies cannot
+# parse: equality still works, mass does not.
 function resolve_species(label::AbstractString, labels)
   s = String(get(labels, label, label))
   try

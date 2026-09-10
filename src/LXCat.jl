@@ -29,31 +29,28 @@ end
 """
     AbstractCollision{R}
 
-A collision process. `R` is the type of the [`reaction`](@ref) field — what
-the process does — while the concrete subtype carries the process *physics*
-(mass ratio, threshold energy, statistical weight ratio) and is what multiple
-dispatch keys on.
+A collision process. `R` is the type of the [`reaction`](@ref) field — what the
+process does — while the concrete subtype carries the process *physics* (mass
+ratio, threshold energy, statistical weight ratio) and is what dispatch keys on.
 
 `R` is [`LXCatReaction`](@ref) for a database as parsed (raw LXCat label
-strings, which are not reliably parseable — see [`resolve`](@ref)) and
+strings, not reliably parseable — see [`resolve`](@ref)) and
 `PlasmaSpecies.ReactionFormula` once a label map has been applied. So
-`AbstractCollision{ReactionFormula}` is the signature for anything that needs
-real species, and the unresolved case cannot reach it by accident.
+`AbstractCollision{ReactionFormula}` is the signature for anything needing real
+species, and an unresolved database cannot reach it by accident.
 
-The `reaction` field is always the first field; [`with_reaction`](@ref) relies
-on that.
+`reaction` is always the first field; [`with_reaction`](@ref) relies on that.
 """
 abstract type AbstractCollision{R} end
 
 """
     LXCatReaction(projectile, target, product=nothing)
 
-The reaction of a collision as the database spells it: raw LXCat label
-strings, unresolved. An empty or whitespace-only `product` normalises to
-`nothing`.
+The reaction of a collision as the database spells it: raw, unresolved LXCat
+label strings. An empty or whitespace-only `product` normalises to `nothing`.
 
-LXCat state notation is not standardized — each database chooses its own names
-for the states — so these strings are kept verbatim rather than parsed. Use
+LXCat state notation is not standardized — each database names its states its
+own way — so these strings are kept verbatim rather than parsed. Use
 [`resolve`](@ref) with a label map to turn them into a
 `PlasmaSpecies.ReactionFormula`.
 """
@@ -102,10 +99,9 @@ struct BackScatter{R} <: AbstractCollision{R}
   reaction::R
 end
 
-# ── Legacy constructors ──────────────────────────────────────────────────────
-# Pre-0.3 these types stored `projectile`/`target`/`excited_state` strings
-# directly. The string forms build an `LXCatReaction`, which is what the
-# parser still does, so `parse_coll_type` needs no special casing.
+# ── String constructors ──────────────────────────────────────────────────────
+# `projectile`/`target`/`excited_state` strings build an `LXCatReaction`, so
+# `parse_coll_type` can construct any collision kind uniformly.
 
 Elastic(projectile::AbstractString, target::AbstractString, mass_ratio) =
   Elastic(LXCatReaction(projectile, target), mass_ratio)
@@ -126,9 +122,9 @@ Isotropic(projectile::AbstractString, target::AbstractString) =
 BackScatter(projectile::AbstractString, target::AbstractString) =
   BackScatter(LXCatReaction(projectile, target))
 
-# Field access as it was before 0.3, for collisions still holding raw labels.
-# Deliberately not defined for resolved collisions: `c.target` has no single
-# answer once a reaction can name several products.
+# Direct label access for collisions still holding raw labels. Deliberately not
+# defined for resolved ones: `c.target` has no single answer once a reaction can
+# name several products.
 function Base.getproperty(c::AbstractCollision{LXCatReaction}, s::Symbol)
   r = getfield(c, :reaction)
   s === :projectile && return r.projectile
@@ -171,14 +167,13 @@ with_reaction(cs::CrossSection, r) =
     product_label(c) -> Union{String,Nothing}
     projectile_label(c) -> String
 
-Labels of a reaction, collision or cross section. For an
-[`LXCatReaction`](@ref) these are the raw database strings. For a resolved
-reaction they are rendered from the species, so they read in LoKI notation
-rather than the original database's spelling — see the round-trip note above
-`_lxcat_keyword`.
+Labels of a reaction, collision or cross section. For an [`LXCatReaction`](@ref)
+these are the raw database strings; for a resolved reaction they are rendered
+from the species, so they read in LoKI notation rather than the original
+database's spelling — see the round-trip note above `_lxcat_keyword`.
 
-`product_label` is `nothing` for a process with no distinct product (elastic
-and momentum-transfer kinds, or an empty LXCat excited-state field).
+`product_label` is `nothing` for a process with no distinct product: elastic and
+momentum-transfer kinds, or an empty LXCat excited-state field.
 """
 target_label(r::LXCatReaction) = r.target
 target_label(c::AbstractCollision) = target_label(reaction(c))
@@ -206,25 +201,23 @@ reaction_key(c) = (target_label(c), product_label(c))
 """
     resolve(x, reactions) -> x
 
-Replace raw [`LXCatReaction`](@ref) labels with
-`PlasmaSpecies.ReactionFormula`s taken from `reactions`, a map from
-[`reaction_key`](@ref) pairs to formulas (or to strings, which are parsed).
+Replace raw [`LXCatReaction`](@ref) labels with `PlasmaSpecies.ReactionFormula`s
+taken from `reactions`, a map from [`reaction_key`](@ref) pairs to formulas.
 Works on a collision, a cross section, or a whole database.
 
-Map values may be `ReactionFormula`s directly, or strings — parsing a string
-needs `PlasmaSpecies` loaded (the `LXCatPlasmaSpeciesExt` extension).
+Map values may be `ReactionFormula`s or strings; parsing a string needs
+`PlasmaSpecies` loaded (the `LXCatPlasmaSpeciesExt` extension).
 
 Throws if any entry is missing from the map, listing every gap at once, so a
 forgotten state cannot slip through as a rate coefficient that matches nothing
-downstream. Use [`missing_reactions`](@ref) or [`reaction_template`](@ref) to
-check coverage up front.
+downstream. [`missing_reactions`](@ref) and [`reaction_template`](@ref) check
+coverage up front.
 """
 function resolve end
 
-# Map values pass through untouched; parsing a string needs PlasmaSpecies, so
-# `_parse_reaction` is a hook the extension makes more specific (its fallback
-# is on ::Any so the extension's ::AbstractString method adds rather than
-# overwrites).
+# Map values pass through untouched. Parsing a string needs PlasmaSpecies, so
+# `_parse_reaction` is a hook the extension specializes — the fallback is on
+# ::Any, so the extension's ::AbstractString method adds rather than overwrites.
 _to_reaction(r) = r
 _to_reaction(s::AbstractString) = _parse_reaction(s)
 _parse_reaction(s) = throw(ArgumentError(
@@ -255,9 +248,9 @@ end
     reaction_template(db) -> String
 
 Pasteable Julia source for a [`resolve`](@ref) map covering every distinct
-[`reaction_key`](@ref) in `db`, with the right-hand sides left blank. Since
-LXCat state notation cannot be parsed, the map has to be written by hand; this
-saves writing it blind against a database you have not inspected.
+[`reaction_key`](@ref) in `db`, right-hand sides left blank. The map has to be
+written by hand, LXCat state notation not being parseable; this gives it a
+skeleton matching the database at hand.
 """
 function reaction_template(db)
   io = IOBuffer()
@@ -300,10 +293,9 @@ _key_literal(k) =
     product_species(c; labels=Dict()) -> Union{PlasmaSpecies.Species,Nothing}
 
 Resolve [`target_label`](@ref)/[`product_label`](@ref) into
-`PlasmaSpecies.Species` (requires `PlasmaSpecies` to be loaded; provided by
-the `LXCatPlasmaSpeciesExt` extension). `labels` maps raw LXCat labels to
-LoKI notation first; anything unparseable falls back to a `StringGas`
-species.
+`PlasmaSpecies.Species`; requires `PlasmaSpecies` to be loaded (the
+`LXCatPlasmaSpeciesExt` extension). `labels` remaps raw LXCat labels to LoKI
+notation first; anything unparseable falls back to a `StringGas` species.
 """
 function target_species end
 
@@ -315,10 +307,9 @@ function product_species end
 function parse_string(s; extrapolation = ExtrapolationType.Extension, cache_parameters=true)
   lines = split(s, '\n')
 
-  # find start and end lines cross section data
-  # start one line after the first separation line (----...)
+  # Cross-section data: from one line after the first separator (----...)
   cs_start = findfirst(x -> startswith(x, "--"), lines) + 1
-  # end one line before the second separation line (----...)
+  # to one line before the second.
   cs_end = findlast(x -> startswith(x, "--"), lines) - 1
 
   comment = ""
@@ -341,7 +332,7 @@ function parse_string(s; extrapolation = ExtrapolationType.Extension, cache_para
     push!(energy, parse(Float64, e))
     push!(cs, parse(Float64, c))
   end
-  # sorting by energy, if the data is not in the right order
+  # Source files are not always ordered by energy.
   perm = sortperm(energy)
   energy = energy[perm]
   cs = cs[perm]
@@ -362,23 +353,20 @@ function deduplicate_knots!(knots::Vector{Float64})
 end
 
 function parse_coll_type(lines)
-  # for electron cross sections the first line determines the collision type
+  # Electron cross sections: line 1 is the collision type keyword.
   if lines[1] in keys(KEYWORD_DICT) && !occursin("ATTACHMENT", lines[1])
     type = KEYWORD_DICT[lines[1]]
-    # regex to catch both "<->" and "->"
+    # Regex catches both "<->" and "->".
     states = strip.(split(lines[2], r"<*->"))
 
-    # the third line contains additional info on the collision process
-    # this depends on the collision type:
-    # - for effective and elastic collisions it is the mass ratio
-    # - for excitation of ionization it is the threshold energy +
-    #   optionally the ratio of statistical weights of the states
-    # First remove possible comments (everything behind '/')
+    # Line 3 holds the process parameters, per collision type: mass ratio for
+    # elastic/effective, threshold energy (optionally plus the statistical
+    # weight ratio) for excitation/ionization. Comments run from '/'.
     info_str = strip(split(lines[3], '/')[1])
     additional_info = parse.(Float64, strip.(split(info_str)))
     return type("e", states..., additional_info...)
-    # ion cross sections do not start with the collision type keyword, but with
-    # the SPECIES field (at least for the cases we have seen so far)
+    # Ion cross sections start with the SPECIES field instead of the collision
+    # type keyword.
   elseif startswith(lines[1], "SPECIES:")
     projectile, target = strip.(split(lines[1][9:end], '/'))
     type = split(
@@ -431,24 +419,23 @@ function load_database(filename; target=nothing)
 end
 
 # ── Writing ──────────────────────────────────────────────────────────────
-# The inverse of parse_string/parse_coll_type above. `parse_string` only
-# ever reads a fixed set of header lines per collision kind (see
-# `parse_coll_type`) and ignores everything else (e.g. the informational
-# SPECIES:/PROCESS:/PARAM./COLUMNS: lines real LXCat exports carry alongside
-# electron-process headers) — so only those fields are reproduced here.
-# Consequently `write_database` round-trips a `CrossSection` through
-# `load_database` exactly *in value* (collision fields, comment, timestamp,
-# energy/cross-section samples), not in exact byte formatting: the original
-# numeric formatting isn't retained, and neither is the "->" vs "<->" choice
-# on the species line (`parse_coll_type` treats them identically via the
-# `r"<*->"` split regex, so `AbstractCollision` doesn't store which one a
-# source file used) — "->" is written uniformly here.
+# The inverse of parse_string/parse_coll_type above. `parse_string` reads a fixed
+# set of header lines per collision kind (see `parse_coll_type`) and ignores the
+# rest — the informational SPECIES:/PROCESS:/PARAM./COLUMNS: lines real LXCat
+# exports carry alongside electron-process headers — so only those fields are
+# reproduced here.
 #
-# One further caveat since 0.3: a database that has been through `resolve` no
-# longer holds the original label strings, so its species lines are rendered
-# from the species in LoKI notation. Writing such a database produces a valid
-# LXCat file that does not match the source byte-for-byte or label-for-label.
-# Write the unresolved database if the original spelling matters.
+# `write_database` therefore round-trips a `CrossSection` through
+# `load_database` exactly *in value* (collision fields, comment, timestamp,
+# energy/cross-section samples), not in byte formatting: the original numeric
+# formatting is not retained, and neither is "->" vs "<->" on the species line
+# (`parse_coll_type` treats them identically via the `r"<*->"` split, so
+# `AbstractCollision` never stores which was used) — "->" is written uniformly.
+#
+# A resolved database no longer holds the original label strings either, so its
+# species lines are rendered from the species in LoKI notation: a valid LXCat
+# file, but matching the source neither byte-for-byte nor label-for-label. Write
+# the unresolved database when the original spelling matters.
 
 _lxcat_keyword(::Elastic) = "ELASTIC"
 _lxcat_keyword(::Effective) = "EFFECTIVE"
@@ -457,17 +444,15 @@ _lxcat_keyword(::Ionization) = "IONIZATION"
 _lxcat_keyword(::Isotropic) = "Isotropic"
 _lxcat_keyword(::BackScatter) = "Backscat"
 
-# Line 2 for electron processes: bare target (Elastic/Effective, which have
-# no excited state) or "target -> excited_state" (Excitation/Ionization/
-# Attachment).
+# Line 2 for electron processes: a bare target (Elastic/Effective, which have no
+# excited state) or "target -> excited_state" (Excitation/Ionization/Attachment).
 _species_line(c::Union{Elastic,Effective}) = target_label(c)
 _species_line(c::Union{Excitation,Ionization,Attachment}) =
   "$(target_label(c)) -> $(something(product_label(c), ""))"
 
-# Line 3 for electron processes: mass ratio, or threshold energy [+
-# statistical weight ratio] — always written for Excitation even when the
-# ratio is the default 1.0, since `parse_coll_type` accepts either 1 or 2
-# numbers there interchangeably.
+# Line 3 for electron processes: mass ratio, or threshold energy [+ statistical
+# weight ratio]. Excitation always writes the ratio, default 1.0 included, since
+# `parse_coll_type` accepts either one or two numbers there.
 _info_line(c::Union{Elastic,Effective}) = string(c.mass_ratio)
 _info_line(c::Ionization) = string(c.threshold_energy)
 _info_line(c::Excitation) = "$(c.threshold_energy)  $(c.stat_weight_ratio)"

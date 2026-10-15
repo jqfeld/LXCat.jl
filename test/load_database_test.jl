@@ -10,7 +10,10 @@ db = load_database("test_data.txt")
 
 
 @testset "element type is the Union of record types present" begin
-  db = load_database(joinpath(@__DIR__, "test_data.txt"))
+  # Constant extrapolation: the loop below evaluates every record at energies
+  # some of them do not tabulate
+  db = load_database(joinpath(@__DIR__, "test_data.txt");
+    extrapolation=ExtrapolationType.Constant)
   @test eltype(db) == Union{unique(typeof.(db))...}
   @test eltype(db) isa Union
   @test db isa AbstractVector{<:CrossSection}

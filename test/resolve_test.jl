@@ -196,5 +196,6 @@ end
 
   # deliberately not forwarded once resolved: `.target` has no single answer
   resolved = with_reaction(exc, p"e + O2 --> e + 2O[3P]")
-  @test_throws FieldError resolved.target
+  # FieldError exists from Julia 1.12; earlier versions throw ErrorException
+  @test_throws (isdefined(Base, :FieldError) ? FieldError : ErrorException) resolved.target
 end

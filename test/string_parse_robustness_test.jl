@@ -82,3 +82,13 @@ end
   @test length(ar) == count(cs -> target_label(cs) == "Ar", db)
   @test isempty(load_database(joinpath(@__DIR__, "test_data.txt"); target="Xe"))
 end
+
+@testset "load_database passes interpolation options" begin
+  using DataInterpolations: ExtrapolationType
+  path = joinpath(@__DIR__, "test_data.txt")
+  ext = load_database(path; target="CH4")
+  con = load_database(path; target="CH4", extrapolation=ExtrapolationType.Constant)
+  last_u = only(con).cross_section.u[end]
+  @test only(con)(1e5) == last_u
+  @test only(ext)(1e5) != last_u
+end

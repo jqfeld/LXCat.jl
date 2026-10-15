@@ -69,4 +69,16 @@ Ar
   1.360e-5 / mass ratio
 UPDATED: 2020-01-01 00:00:00
 """)
+  # no UPDATED line
+  @test_throws ArgumentError parse_string(replace(base,
+    "UPDATED: 2010-06-23 11:41:34\n" => ""))
+end
+
+@testset "load_database target filter" begin
+  db = load_database(joinpath(@__DIR__, "test_data.txt"))
+  ar = load_database(joinpath(@__DIR__, "test_data.txt"); target="Ar")
+  @test !isempty(ar)
+  @test all(cs -> target_label(cs) == "Ar", ar)
+  @test length(ar) == count(cs -> target_label(cs) == "Ar", db)
+  @test isempty(load_database(joinpath(@__DIR__, "test_data.txt"); target="Xe"))
 end

@@ -2,7 +2,6 @@ module LXCat
 
 using Dates
 using DataInterpolations
-using Printf
 
 export load_database, parse_string, write_database, write_cross_section
 export target_label, product_label, projectile_label, target_species, product_species
@@ -19,6 +18,14 @@ function (cs::AbstractCrossSection)(E)
   max(0, cs.cross_section(E))
 end
 
+"""
+    CrossSection{T,I}
+
+One LXCat record: `type` (an [`AbstractCollision`](@ref)), `comment`, the
+`updated` timestamp and `cross_section`, an interpolation of the tabulated
+data over energy in eV. Calling `cs(E)` returns the cross section in m² at
+energy `E`, clamped at zero.
+"""
 struct CrossSection{T,I} <: AbstractCrossSection
   type::T
   comment::String
@@ -304,6 +311,13 @@ function product_species end
 
 
 
+"""
+    parse_string(s; extrapolation=ExtrapolationType.Extension, cache_parameters=true) -> CrossSection
+
+Parse one LXCat record (header, `-----` separator, data, separator) into a
+[`CrossSection`](@ref). The keyword arguments are passed to
+`DataInterpolations.LinearInterpolation`.
+"""
 function parse_string(s; extrapolation = ExtrapolationType.Extension, cache_parameters=true)
   # Strip each line: tolerates CRLF line endings and stray whitespace around
   # keywords, which would otherwise fail the exact keyword match below.
@@ -405,30 +419,32 @@ const KEYWORD_DICT = Dict(
 
 
 """
-    load_database(filename; target=nothing) -> Vector{CrossSection}
+    load_database(filename; target=nothing, kwargs...) -> Vector{CrossSection}
 
 Read every cross-section record in the LXCat file `filename`. With `target`
-given, keep only records whose [`target_label`](@ref) equals it.
+given, keep only records whose [`target_label`](@ref) equals it. Other keyword
+arguments (`extrapolation`, `cache_parameters`) are passed to
+[`parse_string`](@ref).
 """
-function load_database(filename; target=nothing)
+function load_database(filename; target=nothing, kwargs...)
   cross_sections = CrossSection[]
-  cs_string = ""
+  record = String[]
   sep_counter = -1
   open(filename) do file
     for line in eachline(file)
       if (strip(line) in keys(KEYWORD_DICT) || occursin("SPECIES:", line)) && sep_counter < 0
-        cs_string = ""
+        empty!(record)
         sep_counter = 0
       end
       if sep_counter >= 0
-        cs_string *= line * '\n'
+        push!(record, line)
         # same separator test as `parse_string`
         if startswith(strip(line), "--")
           sep_counter += 1
         end
         if sep_counter == 2
           sep_counter = -1
-          cs = parse_string(cs_string)
+          cs = parse_string(join(record, '\n'); kwargs...)
           (target === nothing || target_label(cs) == target) &&
             push!(cross_sections, cs)
         end
@@ -505,7 +521,8 @@ function write_cross_section(io::IO, cs::CrossSection)
   println(io, separator)
   energy, cross_section = cs.cross_section.t, cs.cross_section.u
   for (e, c) in zip(energy, cross_section)
-    println(io, @sprintf("%.6e\t%.6e", e, c))
+    # shortest representation that parses back to the same Float64
+    println(io, repr(e), '\t', repr(c))
   end
   println(io, separator)
   println(io)

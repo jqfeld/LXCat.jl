@@ -16,10 +16,10 @@ for (cs1, cs2) in zip(db, db2)
     @test cs1.type == cs2.type
     @test cs1.comment == cs2.comment
     @test cs1.updated == cs2.updated
-    # Energy/cross-section samples go through a fixed "%.6e" format, so
-    # only approximate equality is expected here.
-    @test cs1.cross_section.t ≈ cs2.cross_section.t rtol = 1e-6
-    @test cs1.cross_section.u ≈ cs2.cross_section.u rtol = 1e-6
+    # Energy/cross-section samples are written in shortest round-trip form
+    # too, so they come back exactly.
+    @test cs1.cross_section.t == cs2.cross_section.t
+    @test cs1.cross_section.u == cs2.cross_section.u
 end
 
 rm(tmpfile)

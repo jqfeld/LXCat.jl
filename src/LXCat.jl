@@ -8,6 +8,7 @@ export target_label, product_label, projectile_label, target_species, product_sp
 export reaction_key
 export reaction, with_reaction, resolve, reaction_template, missing_reactions
 export AbstractCollision, LXCatReaction
+export ExtrapolationType  # from DataInterpolations, for the `extrapolation` keyword
 export Elastic, Effective, Excitation,
   Ionization, Isotropic, BackScatter, CrossSection, Attachment
 
@@ -312,13 +313,18 @@ function product_species end
 
 
 """
-    parse_string(s; extrapolation=ExtrapolationType.Extension, cache_parameters=true) -> CrossSection
+    parse_string(s; extrapolation=ExtrapolationType.None, cache_parameters=true) -> CrossSection
 
 Parse one LXCat record (header, `-----` separator, data, separator) into a
 [`CrossSection`](@ref). The keyword arguments are passed to
 `DataInterpolations.LinearInterpolation`.
+
+By default the cross section is not extrapolated: evaluating it outside the
+tabulated energy range throws. Pass e.g. `extrapolation=ExtrapolationType.Constant`
+or `ExtrapolationType.Extension` (linear) to allow it; `ExtrapolationType` is
+re-exported from DataInterpolations.
 """
-function parse_string(s; extrapolation = ExtrapolationType.Extension, cache_parameters=true)
+function parse_string(s; extrapolation = ExtrapolationType.None, cache_parameters=true)
   # Strip each line: tolerates CRLF line endings and stray whitespace around
   # keywords, which would otherwise fail the exact keyword match below.
   lines = strip.(split(s, '\n'))

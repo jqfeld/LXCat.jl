@@ -83,12 +83,14 @@ end
   @test isempty(load_database(joinpath(@__DIR__, "test_data.txt"); target="Xe"))
 end
 
-@testset "load_database passes interpolation options" begin
-  using DataInterpolations: ExtrapolationType
+@testset "extrapolation" begin
   path = joinpath(@__DIR__, "test_data.txt")
-  ext = load_database(path; target="CH4")
-  con = load_database(path; target="CH4", extrapolation=ExtrapolationType.Constant)
-  last_u = only(con).cross_section.u[end]
-  @test only(con)(1e5) == last_u
-  @test only(ext)(1e5) != last_u
+  # CH4 elastic data spans 0 to 1e3 eV
+  default = only(load_database(path; target="CH4"))
+  @test default(1e3) ≈ 3.14e-21
+  @test_throws Exception default(1e5)
+  con = only(load_database(path; target="CH4", extrapolation=ExtrapolationType.Constant))
+  @test con(1e5) == con.cross_section.u[end]
+  lin = only(load_database(path; target="CH4", extrapolation=ExtrapolationType.Extension))
+  @test lin(1e5) != con.cross_section.u[end]
 end

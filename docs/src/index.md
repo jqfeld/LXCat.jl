@@ -22,6 +22,11 @@ cs_array = load_database("/path/to/LXCat/file.txt")
 
 cs_array[1](1.0) # returns cross-section in m^2 for energy 1.0 eV
 
+# Outside the tabulated energy range the cross section is not extrapolated by
+# default and evaluating it throws; opt in per database:
+cs_array = load_database("/path/to/LXCat/file.txt";
+  extrapolation=ExtrapolationType.Constant)  # or .Extension for linear
+
 # write_database() is the inverse of load_database(): same collision data,
 # comments and timestamps, not necessarily the same byte formatting.
 write_database("/path/to/output.txt", cs_array)

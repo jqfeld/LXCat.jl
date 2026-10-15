@@ -249,7 +249,7 @@ function resolve(db::AbstractVector, reactions)
       join(("  " * _key_literal(k) for k in gaps), '\n') *
       "\nSee `reaction_template` for a skeleton covering the whole database."))
   end
-  return [resolve(cs, reactions) for cs in db]
+  return _narrow([resolve(cs, reactions) for cs in db])
 end
 
 """
@@ -425,9 +425,12 @@ const KEYWORD_DICT = Dict(
 
 
 """
-    load_database(filename; target=nothing, kwargs...) -> Vector{CrossSection}
+    load_database(filename; target=nothing, kwargs...) -> Vector{<:CrossSection}
 
-Read every cross-section record in the LXCat file `filename`. With `target`
+Read every cross-section record in the LXCat file `filename`. The element type
+is the `Union` of the concrete record types present, so loops over the result
+are type-stable; annotate with `AbstractVector{<:CrossSection}`, not
+`Vector{CrossSection}`. With `target`
 given, keep only records whose [`target_label`](@ref) equals it. Other keyword
 arguments (`extrapolation`, `cache_parameters`) are passed to
 [`parse_string`](@ref).
@@ -457,8 +460,15 @@ function load_database(filename; target=nothing, kwargs...)
       end
     end
   end
-  cross_sections
+  _narrow(cross_sections)
 end
+
+# Narrow a vector of cross sections to the Union of the concrete types it holds.
+# Every record shares one interpolation type, so `cs(E)` over such a vector
+# compiles to a direct call; over `Vector{CrossSection}` each call is a dynamic
+# dispatch with an allocation, several times slower. Empty stays abstract.
+_narrow(v) = isempty(v) ? convert(Vector{CrossSection}, v) :
+  convert(Vector{Union{unique(typeof.(v))...}}, v)
 
 # ── Writing ──────────────────────────────────────────────────────────────
 # The inverse of parse_string/parse_coll_type above. `parse_string` reads a fixed

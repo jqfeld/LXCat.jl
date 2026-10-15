@@ -217,3 +217,9 @@ end
   @test all(cs -> cs.type.projectile == "Ar[+]" && cs.type.target == "Ar", back)
   rm(path)
 end
+
+@testset "resolved database keeps a narrow element type" begin
+  resolved = resolve(DB, REACTIONS)
+  @test eltype(resolved) == Union{unique(typeof.(resolved))...}
+  @test eltype(resolved) isa Union
+end

@@ -347,6 +347,9 @@ function parse_string(s; extrapolation = ExtrapolationType.Extension, cache_para
   # interval; nudge them apart so the interpolation stays finite.
   deduplicate_knots!(energy)
 
+  isempty(updated_str) &&
+    throw(ArgumentError("no `UPDATED:` line found in cross-section record"))
+
   type = parse_coll_type(lines[1:cs_start])
   return CrossSection(type, comment, DateTime(updated_str), LinearInterpolation(cs, energy; extrapolation, cache_parameters))
 end
@@ -401,6 +404,12 @@ const KEYWORD_DICT = Dict(
 )
 
 
+"""
+    load_database(filename; target=nothing) -> Vector{CrossSection}
+
+Read every cross-section record in the LXCat file `filename`. With `target`
+given, keep only records whose [`target_label`](@ref) equals it.
+"""
 function load_database(filename; target=nothing)
   cross_sections = CrossSection[]
   cs_string = ""
@@ -413,13 +422,15 @@ function load_database(filename; target=nothing)
       end
       if sep_counter >= 0
         cs_string *= line * '\n'
-        if startswith(line, "---")
+        # same separator test as `parse_string`
+        if startswith(strip(line), "--")
           sep_counter += 1
         end
         if sep_counter == 2
           sep_counter = -1
           cs = parse_string(cs_string)
-          push!(cross_sections, cs)
+          (target === nothing || target_label(cs) == target) &&
+            push!(cross_sections, cs)
         end
       end
     end

@@ -199,3 +199,21 @@ end
   # FieldError exists from Julia 1.12; earlier versions throw ErrorException
   @test_throws (isdefined(Base, :FieldError) ? FieldError : ErrorException) resolved.target
 end
+
+@testset "ion processes: projectile is the first substrate" begin
+  ion_db = filter(cs -> cs.type isa Union{Isotropic,BackScatter},
+    load_database(joinpath(@__DIR__, "test_data.txt")))
+  @test !isempty(ion_db)
+  resolved = resolve(ion_db, Dict(("Ar", nothing) => p"Ar[+] + Ar --> Ar[+] + Ar"))
+  @test projectile_label(resolved[1]) == "Ar[+]"
+  @test target_label(resolved[1]) == "Ar"
+  @test product_label(resolved[1]) === nothing
+  @test target_species(resolved[1]) == Species("Ar")
+
+  path = tempname()
+  write_database(path, resolved)
+  back = load_database(path)
+  @test [typeof(cs.type).name for cs in back] == [typeof(cs.type).name for cs in ion_db]
+  @test all(cs -> cs.type.projectile == "Ar[+]" && cs.type.target == "Ar", back)
+  rm(path)
+end

@@ -20,7 +20,16 @@ function _render(species, stoich)
   return join(parts, "+")
 end
 
-LXCat.target_label(f::ReactionFormula) = _render(f.subs, f.substoich)
+# Which substrates are the projectile: the electron(s) for an electron-impact
+# process, otherwise the first substrate, the formula being written in LXCat's
+# `SPECIES: projectile / target` order (e.g. `Ar[+] + Ar --> Ar[+] + Ar`).
+_projectile_mask(f) = any(_iselectron, f.subs) ? _iselectron.(f.subs) :
+                      [i == 1 for i in eachindex(f.subs)]
+
+function LXCat.target_label(f::ReactionFormula)
+  m = .!_projectile_mask(f)
+  return _render(f.subs[m], f.substoich[m])
+end
 
 function LXCat.product_label(f::ReactionFormula)
   # A non-reactive process (elastic, momentum transfer) has no distinct product,
@@ -29,8 +38,10 @@ function LXCat.product_label(f::ReactionFormula)
   return _render(f.prods, f.prodstoich)
 end
 
-LXCat.projectile_label(f::ReactionFormula) =
-  join((string(sp) for sp in f.subs if _iselectron(sp)), "+")
+function LXCat.projectile_label(f::ReactionFormula)
+  m = _projectile_mask(f)
+  return join((string(sp) for sp in f.subs[m]), "+")
+end
 
 # ── Species accessors ────────────────────────────────────────────────────────
 
@@ -49,7 +60,8 @@ function resolve_species(label::AbstractString, labels)
   s = String(get(labels, label, label))
   try
     Species(s)
-  catch
+  catch e
+    e isa InterruptException && rethrow()
     Species(; gas=StringGas(s))
   end
 end
@@ -61,9 +73,10 @@ _heavy(species) = [sp for sp in species if !_iselectron(sp)]
 function LXCat.target_species(c::Union{AbstractCollision{ReactionFormula},
     LXCat.CrossSection{<:AbstractCollision{ReactionFormula}}};
   labels=Dict{String,String}())
-  sub = _heavy(reaction(c).subs)
+  f = reaction(c)
+  sub = f.subs[.!_projectile_mask(f)]
   length(sub) == 1 || throw(ArgumentError(
-    "reaction has $(length(sub)) heavy substrates, no single target species; " *
+    "reaction has $(length(sub)) target substrates, no single target species; " *
     "use `reaction(c)` and read the formula."))
   return only(sub)
 end

@@ -51,5 +51,5 @@ bidirectional_cs = parse_string(bidirectional_string)
 @test bidirectional_cs.comment == ""
 @test bidirectional_cs.updated == DateTime("2021-01-01T12:34:56")
 @test bidirectional_cs.cross_section isa LinearInterpolation
-@test bidirectional_cs.cross_section(3.75) ≈ 3.75e-21 atol=eps()
+@test bidirectional_cs.cross_section(3.75) ≈ 3.75e-21
 @test collect(bidirectional_cs.cross_section.t) == [0.0, 2.5, 5.0]

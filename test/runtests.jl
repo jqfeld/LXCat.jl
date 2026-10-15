@@ -7,6 +7,7 @@ using LXCat, Test, SafeTestsets
 @safetestset "String Parsing Isotropic Cross Section" begin include("string_parse_isotropic_test.jl") end
 @safetestset "String Parsing BackScatter Cross Section" begin include("string_parse_backscatter_test.jl") end
 @safetestset "String Parsing Attachment Cross Section" begin include("string_parse_attachment_test.jl") end
+@safetestset "String Parsing Robustness" begin include("string_parse_robustness_test.jl") end
 
 @safetestset "Database Parsing" begin include("load_database_test.jl") end
 @safetestset "Database Writing" begin include("write_database_test.jl") end

@@ -20,7 +20,7 @@ cs = parse_string(string)
 @test cs.comment == ""
 @test cs.updated == DateTime("2022-09-02T11:05:07")
 @test cs.cross_section isa LinearInterpolation
-@test cs.cross_section(1e3) ≈ 3.14e-21 atol=eps()
+@test cs.cross_section(1e3) ≈ 3.14e-21
 @test collect(cs.cross_section.t) == [0.0, 1.0, 1000.0]
 
 unsorted_string = """ELASTIC
@@ -41,6 +41,6 @@ unsorted_cs = parse_string(unsorted_string)
 @test unsorted_cs.type.mass_ratio == 2.5e-5
 @test unsorted_cs.updated == DateTime("2020-01-01T00:00:00")
 @test unsorted_cs.cross_section isa LinearInterpolation
-@test unsorted_cs.cross_section(0.5) ≈ 5.0e-21 atol=eps()
-@test unsorted_cs.cross_section(1.5) ≈ 1.5e-20 atol=eps()
+@test unsorted_cs.cross_section(0.5) ≈ 5.0e-21
+@test unsorted_cs.cross_section(1.5) ≈ 1.5e-20
 @test collect(unsorted_cs.cross_section.t) == [0.0, 1.0, 2.0]

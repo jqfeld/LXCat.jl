@@ -305,42 +305,50 @@ function product_species end
 
 
 function parse_string(s; extrapolation = ExtrapolationType.Extension, cache_parameters=true)
-  lines = split(s, '\n')
+  # Strip each line: tolerates CRLF line endings and stray whitespace around
+  # keywords, which would otherwise fail the exact keyword match below.
+  lines = strip.(split(s, '\n'))
 
   # Cross-section data: from one line after the first separator (----...)
-  cs_start = findfirst(x -> startswith(x, "--"), lines) + 1
+  first_sep = findfirst(x -> startswith(x, "--"), lines)
+  first_sep === nothing &&
+    throw(ArgumentError("no `-----` separator found in cross-section record"))
+  cs_start = first_sep + 1
   # to one line before the second.
   cs_end = findlast(x -> startswith(x, "--"), lines) - 1
 
-  comment = ""
+  # Multi-line comments keep their line breaks; `write_cross_section` writes
+  # one COMMENT line per line.
+  comment_lines = String[]
   updated_str = ""
   for l in lines[1:(cs_start-1)]
-    if startswith(l, "COMMENT")
-      comment *= replace(l, "COMMENT: " => "")
+    if startswith(l, "COMMENT:")
+      push!(comment_lines, strip(chopprefix(l, "COMMENT:")))
     end
-    if startswith(l, "UPDATED")
-      updated_str = replace(l, "UPDATED: " => "",)
-      updated_str = replace(updated_str, " " => "T")
+    if startswith(l, "UPDATED:")
+      updated_str = replace(strip(chopprefix(l, "UPDATED:")), " " => "T")
     end
-
   end
+  comment = join(comment_lines, '\n')
 
   energy = Float64[]
   cs = Float64[]
   for l in lines[cs_start:cs_end]
-    (e, c) = split(strip(l))
+    (e, c) = split(l)
     push!(energy, parse(Float64, e))
     push!(cs, parse(Float64, c))
   end
-  # Source files are not always ordered by energy.
-  perm = sortperm(energy)
+  # Source files are not always ordered by energy. Stable sort keeps the file
+  # order of repeated energies, which sets the direction of a step.
+  perm = sortperm(energy; alg=MergeSort)
   energy = energy[perm]
   cs = cs[perm]
+  # Repeated energies (a step in the cross section) would give a zero-width
+  # interval; nudge them apart so the interpolation stays finite.
+  deduplicate_knots!(energy)
 
   type = parse_coll_type(lines[1:cs_start])
   return CrossSection(type, comment, DateTime(updated_str), LinearInterpolation(cs, energy; extrapolation, cache_parameters))
-
-
 end
 
 function deduplicate_knots!(knots::Vector{Float64})
@@ -379,6 +387,7 @@ function parse_coll_type(lines)
     target, excited_state = strip.(split(lines[2], "->"))
     return Attachment("e", target, excited_state)
   end
+  throw(ArgumentError("unrecognized cross-section record header: $(repr(lines[1]))"))
 end
 
 const KEYWORD_DICT = Dict(
@@ -474,7 +483,11 @@ function write_cross_section(io::IO, cs::CrossSection)
   for line in _header_lines(cs.type)
     println(io, line)
   end
-  isempty(cs.comment) || println(io, "COMMENT: ", cs.comment)
+  if !isempty(cs.comment)
+    for l in split(cs.comment, '\n')
+      println(io, "COMMENT: ", l)
+    end
+  end
   println(io, "UPDATED: ", Dates.format(cs.updated, "yyyy-mm-dd HH:MM:SS"))
 
   separator = "-"^60

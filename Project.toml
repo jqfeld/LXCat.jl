@@ -19,7 +19,7 @@ LXCatPlasmaSpeciesExt = "PlasmaSpecies"
 [compat]
 DataInterpolations = "8.6, 9"
 Dates = "1"
-PlasmaSpecies = "0.2, 0.3"
+PlasmaSpecies = "0.2, 0.3, 0.4"
 SafeTestsets = "0.1"
 Test = "1"
 julia = "1.11"
